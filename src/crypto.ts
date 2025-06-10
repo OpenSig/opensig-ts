@@ -5,9 +5,10 @@
 
 import { createSHA256 } from 'hash-wasm';
 import { randomBytes } from 'ethers';
-import { gcm } from '@noble/ciphers/webcrypto';
+import { gcm } from '@noble/ciphers/aes';
 import { hexToBytes } from './utils';
 import { assertUint8Array } from './errors';
+import { sha256 } from '@noble/hashes/sha2';
 
   
 
@@ -41,10 +42,7 @@ export async function hashFile(file: Blob): Promise<Uint8Array> {
  */
 export async function hash(data: Uint8Array): Promise<Uint8Array> {
   assertUint8Array(data, "hash");
-  const hasher = await createSHA256();
-  hasher.init();
-  hasher.update(data);
-  return hexToBytes(hasher.digest('hex'));
+  return sha256(data);
 }
 
 /**
