@@ -198,7 +198,7 @@ async function _publishSignature(provider: IBlockchainProvider, signature: Uint8
  */
 async function _discoverSignatures(provider: IBlockchainProvider, documentHash: Uint8Array, encryptionKey: EncryptionKey) {
   const signatureEvents: Signature[] = [];
-  const hashes = new HashIterator(documentHash, provider.config.chainId);
+  const hashes = new HashIterator(documentHash, provider.chainId);
 
   async function _decodeSignatureEvent(encryptionKey: EncryptionKey, event: SignatureEvent): Promise<Signature> {
     const decodedData = await DataEncoder.decodeData(encryptionKey, event.data);

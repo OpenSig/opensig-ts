@@ -7,33 +7,11 @@ import { SignatureEvent, SignatureReceipt } from '../types';
 
 
 /**
- * Configuration for a blockchain network used by the provider.
- * * @property {number} chainId - Unique identifier for the blockchain network.
- * * @property {string} name - Human-readable name of the blockchain network. Not used in the provider.
- * * @property {Object} registryContract - Configuration for the signature registry contract.
- * * @property {string} registryContract.address - Address of the signature registry contract.
- * * @property {number} registryContract.creationBlock - Block number when the registry contract was deployed. Reduces the search space for events.
- * * @property {number} blockTime - Average time between blocks in seconds. Used by some providers to adjust timeouts.
- * * @property {number} networkLatency - Estimated network latency in seconds. Used by some providers to adjust query intervals.
- */
-export interface BlockchainConfig {
-  chainId: number;
-  name?: string;
-  registryContract: {
-    address: string;
-    creationBlock: number;
-  };
-  blockTime: number;
-  networkLatency: number;
-}
-
-/**
  * Interface for blockchain providers that handle signature publishing and querying.
  */
 export interface IBlockchainProvider {
 
-  /// Configuration for the blockchain provider
-  config: BlockchainConfig;
+  chainId: number;
 
   /**
    * Queries the blockchain for signature events matching the provided hashes.

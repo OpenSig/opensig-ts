@@ -17,33 +17,36 @@ npm install opensig-ts
 
 #### Usage
 ```typescript
-import { OpenSig, BlockchainConfig, EthersProvider, SignatureData } from 'opensig-ts';
+import { OpenSig, RegistryContract, EthersProvider, SignatureData } from 'opensig-ts';
 import { ethers } from 'ethers';
 
-// Construct a blockchain provider (see Blockchain Providers section below)
+const privateKey = ethers.randomBytes(32);
+const chainId = 137;
 
-const signer = ethers.Wallet.createRandom();
-
-const rpcUrl = "https://polygon-rpc.com";
-
-const providerConfig: BlockchainConfig = {
-  chainId: 137,
-  registryContract: {
-    address: "0x4037E81D79aD0E917De012dE009ff41c740BB453",
-    creationBlock: 40031474,
-  },
-  blockTime: 2000,
-  networkLatency: 5000
+const registryContract: RegistryContract = {
+  address: "0x4037E81D79aD0E917De012dE009ff41c740BB453",
+  creationBlock: 40031474
 };
 
-const provider = new EthersProvider(providerConfig, signer, rpcUrl);
+// Construct an OpenSig blockchain provider (see Blockchain Providers section below)
+
+const signer = new ethers.Wallet(
+  privateKey, 
+  new ethers.JsonRpcProvider("https://polygon-rpc.com")  // provider used for publishing signatures
+);
+
+const signatureProvider = new EthersProvider(
+  chainId,
+  registryContract, 
+  signer, 
+  new ethers.JsonRpcProvider("https://polygon-rpc.com")  // provider used for querying signatures
+);
 
 // Construct an OpenSig instance that uses your provider
 
-const opensig = new OpenSig(provider);
+const opensig = new OpenSig(signatureProvider);
 
-// Construct an OpenSig Document object from a File 
-// (or construct one from a document hash)
+// Construct an OpenSig Document object from a File (or from a document hash)
 
 const myDoc = new opensig.createDocument(new File('./myfile.txt'));
 
@@ -52,7 +55,6 @@ const myDoc = new opensig.createDocument(new File('./myfile.txt'));
 const signatures = await myDoc.verify();
 
 signatures.forEach(sig => console.log(sig.time, sig.signatory, sig.data));
-
 
 // Sign a document. 
 // NB: You must `verify()` a document at least once before signing. This brings the object's
@@ -72,21 +74,26 @@ console.log(result.txHash, result.signatory, result.signature);
 const receipt = await result.confirmed;
 
 console.log('signature published successfully', receipt);
+
 ```
 
 ## Blockchain Providers
 
 OpenSig blockchain providers publish signature transactions to the blockchain and query the blockchain for signature events.
 
-The bundled `EthersProvider` should be sufficient for most purposes, however you are free to implement your own.  See [src/providers.js](src/providers.js) for the `BlockchainProvider` interface.
+The bundled `EthersProvider` should be sufficient for most purposes, however you are free to implement your own.  See [src/providers](src/providers) for the `IBlockchainProvider` interface.
 
 ### EthersProvider
 
-An `EthersProvider` publishes and verifies signatures using `ethers-js` built in [Provider](https://docs.ethers.org/v6/api/providers/) instances. 
+An `EthersProvider` publishes and verifies signatures using `ethers` built in [Provider](https://docs.ethers.org/v6/api/providers/) instances. 
 
 This allows OpenSig to be used with browser-installed wallets, RPC providers and community providers like Ankr and Infura (see [ethers community providers](https://docs.ethers.org/v6/api/providers/thirdparty/)).
 
-The `EthersProvider` class takes a `provider` constructor parameter. The provider will be used for both publishing signatures and reading signature event logs. Alternatively, use the `transactionProvider` and `logProvider` parameters to set different providers for publishing to and reading from the blockchain.
+The `EthersProvider` class takes separate `signer` and `rpcProvider` constructor parameter. The signer must have a provider
+
+### AbstractEVMProvider
+
+Extend `AbstractEVMProvider` to verify signatures using an ethers provider and publish via a custom protocol.
 
 ## Testing
 

@@ -17,7 +17,7 @@ const OPENSIG_PROTOCOL_CONSTANTS = {
 // ------ Mocks ------
 
 const mockNetwork = {
-  config: { chainId: 1 },
+  chainId: 1,
   publishSignature: jest.fn(() => Promise.resolve({
     txHash: '0x123',
     signatory: '0xabc',
@@ -76,7 +76,7 @@ describe('OpenSig Document class', () => {
     }
 
     beforeAll(async () => {
-      const iterator = new opensig.HashIterator(sampleHash, mockNetwork.config.chainId);
+      const iterator = new opensig.HashIterator(sampleHash, mockNetwork.chainId);
       const hashes = await iterator.next(100);
       hashChain = hashes.map(h => bytesToHex(h));
     });

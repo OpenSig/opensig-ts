@@ -6,9 +6,19 @@
 import { ethers, Log } from 'ethers';
 import { SignatureEvent, SignatureReceipt } from '../types';
 import { REGISTRY_ABI } from '../constants';
-import { BlockchainConfig, IBlockchainProvider } from './IBlockchainProvider';
+import { IBlockchainProvider } from './IBlockchainProvider';
 
 const SignatureEventDecoder = new ethers.Interface(REGISTRY_ABI);
+
+/**
+ * Configuration for a blockchain network used by the provider.
+ * * @property {string} address - Address of the signature registry contract.
+ * * @property {number} creationBlock - Block number when the registry contract was deployed. Reduces the search space for events.
+ */
+export interface RegistryContract { 
+  address: string; 
+  creationBlock: number; 
+}
 
 /**
  * Abstract base class for EVM blockchain providers. Handles signature querying and decoding
@@ -16,18 +26,20 @@ const SignatureEventDecoder = new ethers.Interface(REGISTRY_ABI);
  */
 export abstract class AbstractEVMProvider implements IBlockchainProvider {
 
-  public config: BlockchainConfig;
+  public chainId: number;
+  public registryContract: RegistryContract;
   public rpcProvider: ethers.AbstractProvider;
 
-  constructor(config: BlockchainConfig, rpcProvider: ethers.AbstractProvider) {
-    this.config = config;
+  constructor( chainId: number, registryContract: RegistryContract, rpcProvider: ethers.AbstractProvider ) {
+    this.chainId = chainId;
+    this.registryContract = registryContract;
     this.rpcProvider = rpcProvider;
   }
 
   async querySignatures(hashes: string[]): Promise<SignatureEvent[]> {
-    const contract = new ethers.Contract(this.config.registryContract.address, REGISTRY_ABI, this.rpcProvider);
+    const contract = new ethers.Contract(this.registryContract.address, REGISTRY_ABI, this.rpcProvider);
     const filter = contract.filters.Signature(null, null, hashes);
-    const logs = await contract.queryFilter(filter, this.config.registryContract.creationBlock, 'latest');
+    const logs = await contract.queryFilter(filter, this.registryContract.creationBlock, 'latest');
     return logs.map(log => this._decodeSignatureEvent(log)).filter(sig => sig !== null);
   }
 
