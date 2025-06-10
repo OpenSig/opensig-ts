@@ -62,3 +62,21 @@ export function unicodeHexToStr(str: string) {
   }
   return result;
 }
+
+
+/**
+ * Checks if the given object implements the Blob interface.
+ * @param obj The object to test.
+ * @returns True if the object is a Blob, false otherwise.
+ */
+export function isBlob(obj: any): obj is Blob {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.arrayBuffer === 'function' &&
+    typeof obj.slice === 'function' &&
+    typeof obj.type === 'string' &&
+    typeof obj.size === 'number'
+  );
+}
+

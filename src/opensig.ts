@@ -8,7 +8,7 @@ import { EncryptionKey, hash, hashFile } from './crypto';
 import * as DataEncoder from './data-encoder';
 import { Signature, SignatureData, SignatureEvent, SignatureReceipt } from './types';
 import { MAX_SIGS_PER_DISCOVERY_ITERATION } from './constants';
-import { bytesToHex, concat, hexToBytes, isHexString } from './utils';
+import { bytesToHex, concat, hexToBytes, isBlob, isHexString } from './utils';
 
 /**
  * opensig.js
@@ -47,14 +47,14 @@ export class OpenSig {
     if (fileOrHash instanceof Uint8Array) {
       hash = fileOrHash;
     }
-    else if (fileOrHash instanceof Blob) {
+    else if (isBlob(fileOrHash)) {
       hash = await hashFile(fileOrHash);
     }
     else if (isHexString(fileOrHash)) {
       hash = hexToBytes(fileOrHash);
     }
     if (hash.length != 32 ) {
-      throw new TypeError("TypeError: expecting File or document hash (as 32-byte Uint8Array or hex string)");
+      throw new TypeError("TypeError: expecting Blob or document hash (as 32-byte Uint8Array or hex string)");
     }
     return new Document(this.provider, hash);
   }
@@ -101,7 +101,7 @@ export class Document {
    * must have been verified using the `verify` function before signing.
    * 
    * @param {Object} data (optional) containing
-   *    type: 'string'|'hex'
+   *    type: 'string'|'binary'|'none'
    *    encrypted: boolean. If true, opensig will encrypt the data using the document hash as the encryption key
    *    content: string containing either the text or hex content
    * @returns {Object} containing 
@@ -141,6 +141,26 @@ export class Document {
         this.hashIterator = result.hashes;
         return result.signatures;
       });
+  }
+
+  /**
+   * Calculates the unique public id of the document.  This hash can be safely shared 
+   * with others without revealing the document hash or the encryption key used to encrypt 
+   * signature data.
+   * @returns string - the public id of the document as a 32-byte hex string
+   */
+  async getPublicIdentifier(): Promise<string> {
+    return bytesToHex(await hash(this.documentHash));
+  }
+
+  /**
+   * Returns a hex string representation of the document hash.
+   * IMPORTANT! this hash must not be displayed or shared with others as it could be used to
+   * sign without being in posession of the original document.
+   * @returns string - the 32-byte document hash as a hex string prefixed with '0x'
+   */
+  getDocumentHash(): string {
+    return bytesToHex(this.documentHash);
   }
 
 }
@@ -222,7 +242,7 @@ async function _discoverSignatures(provider: IBlockchainProvider, documentHash: 
 export class HashIterator {
 
   documentHash: Uint8Array;
-  chainSpecificHash: Uint8Array;
+  chainSpecificHash?: Uint8Array;
   chainId: number;
   hashes: Uint8Array[] = [];
   hashPtr = -1;

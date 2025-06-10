@@ -9,7 +9,7 @@ import { bytesToHex, hexToBytes, isHexString, unicodeHexToStr, unicodeStrToHex }
 //
 
 export async function encodeData(encryptionKey: EncryptionKey, data?: SignatureData): Promise<string> {
-  if (!data || data.type === 'none' || !data.content || data.content.length === 0 || data.content === '0x') return '0x';
+  if (!data || data.type === 'none' || data.content === '' || data.content === '0x') return '0x';
   if (data.encrypted && typeof data.encrypted !== 'boolean') throw new TypeError("TypeError: invalid data encrypted flag");
 
   let typeField = data.encrypted ? SIG_DATA_ENCRYPTED_FLAG : 0;
@@ -17,7 +17,7 @@ export async function encodeData(encryptionKey: EncryptionKey, data?: SignatureD
 
   switch (data.type) {
     case 'string':
-      if (typeof data.content !== 'string') throw new Error("invalid data content");
+      if (typeof data.content !== 'string' || data.content.length === 0) throw new Error("invalid data content");
       typeField += SIG_DATA_TYPE_STRING;
       encData = unicodeStrToHex(data.content);
       break;
@@ -65,7 +65,8 @@ export async function decodeData(encryptionKey: EncryptionKey, encData: string):
       sigData = bytesToHex(await encryptionKey.decrypt(hexToBytes(sigData)), false);
     }
     catch(error) {
-      return {type: "invalid", content: "failed to decrypt data", encrypted: true, error: error.message};
+      const msg = error instanceof Error ? error.message : String(error);
+      return {type: "invalid", content: "failed to decrypt data", encrypted: true, error: msg};
     }
   }
 

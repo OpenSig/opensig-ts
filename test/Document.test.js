@@ -1,7 +1,7 @@
 
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import { bytesToHex, hexToBytes } from '../src/utils';
-import { aesgcmEncrypt, encodeUTF16BE } from './common';
+import { aesgcmEncrypt, encodeUTF16BE, sha256 } from './common';
 
 // ------ Test Configuration ------
 
@@ -49,6 +49,12 @@ describe('OpenSig Document class', () => {
     jest.clearAllMocks();
   });
 
+  test('getPublicIdentifier() does not return the document hash but the derivative H(Hd)', async () => {
+    const doc = new opensig.Document(mockNetwork, sampleHash);
+    const publicIdentifier = await doc.getPublicIdentifier();
+    expect(publicIdentifier).not.toEqual(bytesToHex(sampleHash));
+    expect(publicIdentifier).toEqual(bytesToHex(await sha256(sampleHash)));
+  });
 
   describe('Verifying', () => {
 
@@ -289,10 +295,24 @@ describe('OpenSig Document class', () => {
           .rejects.toThrow("invalid data content");
       });
 
+      test('Missing string content throws error', async () => {
+        const doc = new opensig.Document(mockNetwork, sampleHash);
+        await doc.verify();
+        await expect(doc.sign({ type: 'string', encrypted: true }))
+          .rejects.toThrow("invalid data content");
+      });
+
       test('Invalid binary content throws error', async () => {
         const doc = new opensig.Document(mockNetwork, sampleHash);
         await doc.verify();
         await expect(doc.sign({ type: 'binary', content: 123, encrypted: true }))
+          .rejects.toThrow("invalid data content");
+      });
+
+      test('Missing binary content throws error', async () => {
+        const doc = new opensig.Document(mockNetwork, sampleHash);
+        await doc.verify();
+        await expect(doc.sign({ type: 'binary', encrypted: true }))
           .rejects.toThrow("invalid data content");
       });
 
@@ -365,6 +385,24 @@ describe('OpenSig Document class', () => {
       const doc = new opensig.Document(mockNetwork, sampleHash);
       await doc.verify();
       const result = await doc.sign();
+      expect(result.txHash).toBe('0x123');
+      expect(mockNetwork.publishSignature).toHaveBeenCalled();
+      expect(mockNetwork.publishSignature.mock.calls[0][1]).toEqual("0x");
+    });
+
+    test('Passing data type "none" signs with empty hex', async () => {
+      const doc = new opensig.Document(mockNetwork, sampleHash);
+      await doc.verify();
+      const result = await doc.sign({type: 'none', content: 'hello world', encrypted: false});
+      expect(result.txHash).toBe('0x123');
+      expect(mockNetwork.publishSignature).toHaveBeenCalled();
+      expect(mockNetwork.publishSignature.mock.calls[0][1]).toEqual("0x");
+    });
+
+    test('Passing empty content signs with empty hex', async () => {
+      const doc = new opensig.Document(mockNetwork, sampleHash);
+      await doc.verify();
+      const result = await doc.sign({type: 'string', content: '', encrypted: false});
       expect(result.txHash).toBe('0x123');
       expect(mockNetwork.publishSignature).toHaveBeenCalled();
       expect(mockNetwork.publishSignature.mock.calls[0][1]).toEqual("0x");

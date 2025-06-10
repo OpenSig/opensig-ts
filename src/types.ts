@@ -23,6 +23,7 @@ export interface SignatureEvent {
   signatory: string;
   signature: string;
   data: string;
+  txHash: string;
 }
 
 /**
@@ -45,6 +46,7 @@ export interface Signature {
   signatory: string;
   signature: string;
   data: SignatureData;
+  txHash: string;
 }
 
 /**

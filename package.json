@@ -2,7 +2,7 @@
   "name": "opensig-ts",
   "version": "0.1.0",
   "description": "OpenSig typescript library",
-  "main": "src/opensig.ts",
+  "main": "src/index.ts",
   "scripts": {
     "test": "jest"
   },
@@ -18,6 +18,7 @@
   "dependencies": {
     "@noble/ciphers": "^1.3.0",
     "@noble/hashes": "^1.8.0",
+    "@scure/base": "^1.2.6",
     "ethers": "^6.14.1",
     "hash-wasm": "^4.12.0"
   },
@@ -26,6 +27,8 @@
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-typescript": "^7.27.1",
     "babel-jest": "^29.7.0",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
