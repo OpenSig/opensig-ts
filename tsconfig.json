@@ -12,7 +12,9 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "noEmit": true // important: Rollup handles emit
+    "sourceMap": false,
+    "skipLibCheck": true
   },
-  "include": ["src", "../opensig-mobile-app/src/model/BiconomyProvider.ts"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

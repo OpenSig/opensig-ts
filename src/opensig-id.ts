@@ -16,12 +16,12 @@
 import { base58, base64url } from '@scure/base';
 import { ethers } from 'ethers';
 
-export type OpenSigIdType = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155';
+export type OpenSigIdType = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155' | 'caip10';
 
 /**
  * Constructs an OpenSig ID from an Ethereum address.
  * @param address the Ethereum address to convert
- * @param type the type of OpenSig ID to return = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155'
+ * @param type the type of OpenSig ID to return = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155' | 'caip10'
  * @param chain the chain ID (default is 137 for Polygon)
  * @returns the OpenSig DID string
  * @throws Error if the address is invalid or the type is unknown
@@ -46,6 +46,8 @@ export function getOpenSigId(address: string, type: OpenSigIdType = 'default', c
       return `did:${method}:${address}`;
     case 'pkh:eip155':
       return `did:pkh:eip155:${chain}:${address}`;
+    case 'caip10':
+      return `eip155:${chain}:${address}`;
     default:
       throw new Error(`Unknown OpenSig ID type: ${type}`);
   }
@@ -74,6 +76,14 @@ export function convertOpenSigId(osId: string, to: OpenSigIdType): string {
 
   if (_isAddress(osId)) {
     address = osId;
+  } 
+  else if (osId.startsWith('eip155:')) {
+    const parts = osId.split(':');
+    if (parts.length !== 3 || isNaN(Number(parts[1])) || !_isAddress(parts[2])) {
+      throw new Error("Invalid eip155 format");
+    }
+    chain = Number(parts[1]);
+    address = parts[2];
   } 
   else if (osId.startsWith('did:pkh:eip155:')) {
     const parts = osId.split(':');
