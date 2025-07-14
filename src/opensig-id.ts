@@ -20,18 +20,17 @@ export type OpenSigIdType = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip15
 
 /**
  * Constructs an OpenSig ID from an Ethereum address.
+ * 
  * @param address the Ethereum address to convert
  * @param type the type of OpenSig ID to return = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155' | 'caip10'
  * @param chain the chain ID (default is 137 for Polygon)
- * @returns the OpenSig DID string
- * @throws Error if the address is invalid or the type is unknown
+ * @returns the OpenSig DID string or the empty string if the address is invalid
+ * @throws Error if the type is not supported
  */
-export function getOpenSigId(address: string, type: OpenSigIdType = 'default', chain: number = 137): string {
-  if (!_isAddress(address)) {
-    throw new Error("Invalid Ethereum address");
-  }
+export function toOpenSigId(address: string, type: OpenSigIdType = 'default', chain: number = 137): string {
+  if (!_isAddress(address)) return '';
 
-  address = ethers.getAddress(address); // Normalize address to checksum format
+  address = ethers.getAddress(address.toLowerCase()); // Normalize address to checksum format
 
   const method = chain === 137 ? 'os' : `os:${chain}`;
 
@@ -53,14 +52,15 @@ export function getOpenSigId(address: string, type: OpenSigIdType = 'default', c
   }
 }
 
+
 /**
  * Converts an OpenSig ID - in any valid format - to an Ethereum address.
  * @param osId the OpenSig ID to convert
- * @returns the Ethereum address
+ * @returns the Ethereum address and chain id
  * @throws Error if the OpenSig ID format is invalid
  */
-export function idToAddress(osId: string): string {
-  return convertOpenSigId(osId, 'address');
+export function idToAddress(osId: string): {address: string, chain: number} {
+  return _resolveOpenSigId(osId, 'address');
 }
 
 /**
@@ -71,6 +71,13 @@ export function idToAddress(osId: string): string {
  * @throws Error if the OpenSig ID format is invalid
  */
 export function convertOpenSigId(osId: string, to: OpenSigIdType): string {
+  const {address, chain} = _resolveOpenSigId(osId, to);
+  return toOpenSigId(address, to, chain);
+}
+
+const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+
+function _resolveOpenSigId(osId: string, to: OpenSigIdType): {address: string, chain: number} {
   let chain = 137;
   let address: string;
 
@@ -113,11 +120,8 @@ export function convertOpenSigId(osId: string, to: OpenSigIdType): string {
     throw new Error("Unknown OpenSig ID format");
   }
 
-  return getOpenSigId(address, to, chain);
+  return {address, chain};
 }
-
-
-const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 
 function _isAddress(address: string): boolean {
   return addressRegex.test(address);
