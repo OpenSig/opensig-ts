@@ -1,21 +1,30 @@
+"use strict";
 // 
 // Copyright (c) OpenSig and contributors. All rights reserved.
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isHexString = isHexString;
+exports.bytesToHex = bytesToHex;
+exports.hexToBytes = hexToBytes;
+exports.concat = concat;
+exports.unicodeStrToHex = unicodeStrToHex;
+exports.unicodeHexToStr = unicodeHexToStr;
+exports.isBlob = isBlob;
 //
 // General utility functions
 //
 const HEX_REGEX = /^(0x)?[0-9a-fA-F]+$/;
-export function isHexString(str) {
+function isHexString(str) {
     return typeof str === 'string' && HEX_REGEX.test(str);
 }
-export function bytesToHex(arr, prefix0x = true) {
+function bytesToHex(arr, prefix0x = true) {
     if (!(arr instanceof Uint8Array))
         throw new TypeError('TypeError: bytesToHex - expected Uint8Array');
     return (prefix0x ? '0x' : '') +
         Array.from(arr).map(x => x.toString(16).padStart(2, '0')).join('');
 }
-export function hexToBytes(hex) {
+function hexToBytes(hex) {
     if (!isHexString(hex))
         throw new TypeError('TypeError: hexToBytes - expected hex string');
     if (hex.length % 2 !== 0)
@@ -25,7 +34,7 @@ export function hexToBytes(hex) {
         return new Uint8Array();
     return Uint8Array.from(matches.map((byte) => parseInt(byte, 16)));
 }
-export function concat(buffers) {
+function concat(buffers) {
     if (!Array.isArray(buffers) || buffers.length === 0) {
         throw new TypeError('TypeError: concat - expected non-empty array of Uint8Arrays');
     }
@@ -38,7 +47,7 @@ export function concat(buffers) {
     }
     return temp;
 }
-export function unicodeStrToHex(str) {
+function unicodeStrToHex(str) {
     var result = "";
     for (let i = 0; i < str.length; i++) {
         const hex = str.charCodeAt(i).toString(16);
@@ -46,7 +55,7 @@ export function unicodeStrToHex(str) {
     }
     return result;
 }
-export function unicodeHexToStr(str) {
+function unicodeHexToStr(str) {
     var hexChars = str.replace('0x', '').match(/.{1,4}/g) || [];
     var result = "";
     for (let j = 0; j < hexChars.length; j++) {
@@ -59,7 +68,7 @@ export function unicodeHexToStr(str) {
  * @param obj The object to test.
  * @returns True if the object is a Blob, false otherwise.
  */
-export function isBlob(obj) {
+function isBlob(obj) {
     return (typeof obj === 'object' &&
         obj !== null &&
         typeof obj.arrayBuffer === 'function' &&

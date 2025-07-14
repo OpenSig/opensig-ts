@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getOpenSigDidResolver = getOpenSigDidResolver;
 const opensig_id_1 = require("./opensig-id");
 /**
- * Returns a DID resolver for the `did:os` method, compatible with `did-resolver`.
+ * Returns a DID resolver for the `did:os` method, compatible with the `did-resolver` library.
  */
 function getOpenSigDidResolver() {
     return {

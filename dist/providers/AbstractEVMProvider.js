@@ -1,22 +1,25 @@
+"use strict";
 // 
 // Copyright (c) OpenSig and contributors. All rights reserved.
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
-import { ethers } from 'ethers';
-import { REGISTRY_ABI } from '../constants';
-const SignatureEventDecoder = new ethers.Interface(REGISTRY_ABI);
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AbstractEVMProvider = void 0;
+const ethers_1 = require("ethers");
+const constants_1 = require("../constants");
+const SignatureEventDecoder = new ethers_1.ethers.Interface(constants_1.REGISTRY_ABI);
 /**
  * Abstract base class for EVM blockchain providers. Handles signature querying and decoding
  * using the ethers library.
  */
-export class AbstractEVMProvider {
+class AbstractEVMProvider {
     constructor(chainId, registryContract, rpcProvider) {
         this.chainId = chainId;
         this.registryContract = registryContract;
         this.rpcProvider = rpcProvider;
     }
     async querySignatures(hashes) {
-        const contract = new ethers.Contract(this.registryContract.address, REGISTRY_ABI, this.rpcProvider);
+        const contract = new ethers_1.ethers.Contract(this.registryContract.address, constants_1.REGISTRY_ABI, this.rpcProvider);
         const filter = contract.filters.Signature(null, null, hashes);
         const logs = await contract.queryFilter(filter, this.registryContract.creationBlock, 'latest');
         return logs.map(log => this._decodeSignatureEvent(log)).filter(sig => sig !== null);
@@ -43,3 +46,4 @@ export class AbstractEVMProvider {
         };
     }
 }
+exports.AbstractEVMProvider = AbstractEVMProvider;

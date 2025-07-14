@@ -1,13 +1,18 @@
+"use strict";
 // 
 // Copyright (c) OpenSig and contributors. All rights reserved.
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
-import { createSHA256 } from 'hash-wasm';
-import { randomBytes } from 'ethers';
-import { gcm } from '@noble/ciphers/aes';
-import { hexToBytes } from './utils';
-import { assertUint8Array } from './errors';
-import { sha256 } from '@noble/hashes/sha2';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EncryptionKey = void 0;
+exports.hashFile = hashFile;
+exports.hash = hash;
+const hash_wasm_1 = require("hash-wasm");
+const ethers_1 = require("ethers");
+const aes_1 = require("@noble/ciphers/aes");
+const utils_1 = require("./utils");
+const errors_1 = require("./errors");
+const sha2_1 = require("@noble/hashes/sha2");
 /**
  * Reads a file in chunks as Uint8Arrays
  */
@@ -23,25 +28,25 @@ async function* readFileChunks(blob, chunkSize = 1024 * 1024) {
 /**
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
-export async function hashFile(file) {
-    const hasher = await createSHA256();
+async function hashFile(file) {
+    const hasher = await (0, hash_wasm_1.createSHA256)();
     hasher.init();
     for await (const chunk of readFileChunks(file)) {
         hasher.update(chunk);
     }
-    return hexToBytes(hasher.digest('hex'));
+    return (0, utils_1.hexToBytes)(hasher.digest('hex'));
 }
 /**
  * Hashes data using SHA-256 via hash-wasm
  */
-export async function hash(data) {
-    assertUint8Array(data, "hash");
-    return sha256(data);
+async function hash(data) {
+    (0, errors_1.assertUint8Array)(data, "hash");
+    return (0, sha2_1.sha256)(data);
 }
 /**
  * AES-GCM based encryption using a key derived from a 32-byte seed
  */
-export class EncryptionKey {
+class EncryptionKey {
     constructor(key) {
         this.key = key;
         if (key.length !== 32)
@@ -53,9 +58,9 @@ export class EncryptionKey {
      * Output is iv + ciphertext, hex-encoded.
      */
     async encrypt(data) {
-        assertUint8Array(data, "encrypt");
-        const iv = randomBytes(12); // 96-bit IV
-        const aes = gcm(this.key, iv);
+        (0, errors_1.assertUint8Array)(data, "encrypt");
+        const iv = (0, ethers_1.randomBytes)(12); // 96-bit IV
+        const aes = (0, aes_1.gcm)(this.key, iv);
         const ciphertext = await aes.encrypt(data);
         return new Uint8Array([...iv, ...ciphertext]);
     }
@@ -63,11 +68,12 @@ export class EncryptionKey {
      * Decrypts AES-GCM encrypted data (hex-encoded).
      */
     async decrypt(data) {
-        assertUint8Array(data, "decrypt");
+        (0, errors_1.assertUint8Array)(data, "decrypt");
         const iv = data.slice(0, 12);
         const ciphertext = data.slice(12);
-        const cipher = gcm(this.key, iv);
+        const cipher = (0, aes_1.gcm)(this.key, iv);
         const plaintext = await cipher.decrypt(ciphertext);
         return plaintext;
     }
 }
+exports.EncryptionKey = EncryptionKey;

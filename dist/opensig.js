@@ -1,12 +1,49 @@
+"use strict";
 // 
 // Copyright (c) OpenSig and contributors. All rights reserved.
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
-import { assertIBlockchainProvider } from './providers/IBlockchainProvider';
-import { EncryptionKey, hash, hashFile } from './crypto';
-import * as DataEncoder from './data-encoder';
-import { MAX_SIGS_PER_DISCOVERY_ITERATION } from './constants';
-import { bytesToHex, concat, hexToBytes, isBlob, isHexString } from './utils';
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HashIterator = exports.Document = exports.OpenSig = void 0;
+exports.setLogTrace = setLogTrace;
+const IBlockchainProvider_1 = require("./providers/IBlockchainProvider");
+const crypto_1 = require("./crypto");
+const DataEncoder = __importStar(require("./data-encoder"));
+const constants_1 = require("./constants");
+const utils_1 = require("./utils");
 /**
  * opensig.js
  *
@@ -20,7 +57,7 @@ import { bytesToHex, concat, hexToBytes, isBlob, isHexString } from './utils';
  */
 let logTrace = function () { };
 setLogTrace(false);
-export function setLogTrace(traceOn) {
+function setLogTrace(traceOn) {
     logTrace = traceOn ? Function.prototype.bind.call(console.info, console, "[opensig]") : function () { };
 }
 /**
@@ -29,21 +66,21 @@ export function setLogTrace(traceOn) {
  * The main entry point for the OpenSig library.  Use this class to create Document objects
  * from files or hashes.  The Document class is used to sign and verify documents.
  */
-export class OpenSig {
+class OpenSig {
     constructor(provider) {
         this.provider = provider;
-        assertIBlockchainProvider(provider);
+        (0, IBlockchainProvider_1.assertIBlockchainProvider)(provider);
     }
     async createDocument(fileOrHash) {
         let hash = new Uint8Array();
         if (fileOrHash instanceof Uint8Array) {
             hash = fileOrHash;
         }
-        else if (isBlob(fileOrHash)) {
-            hash = await hashFile(fileOrHash);
+        else if ((0, utils_1.isBlob)(fileOrHash)) {
+            hash = await (0, crypto_1.hashFile)(fileOrHash);
         }
-        else if (isHexString(fileOrHash)) {
-            hash = hexToBytes(fileOrHash);
+        else if ((0, utils_1.isHexString)(fileOrHash)) {
+            hash = (0, utils_1.hexToBytes)(fileOrHash);
         }
         if (hash.length != 32) {
             throw new TypeError("TypeError: expecting Blob or document hash (as 32-byte Uint8Array or hex string)");
@@ -51,6 +88,7 @@ export class OpenSig {
         return new Document(this.provider, hash);
     }
 }
+exports.OpenSig = OpenSig;
 /**
  * Document class
  *
@@ -62,7 +100,7 @@ export class OpenSig {
  * signatures for this Document found on the blockchain and establishes the next signature in
  * the sequence ready for signing.
  */
-export class Document {
+class Document {
     /**
      * Construct an OpenSig Document (an object formed from a document hash that can be signed and
      * verified) from the given hash.
@@ -76,7 +114,7 @@ export class Document {
         this.sign = this.sign.bind(this);
         this.verify = this.verify.bind(this);
         this.documentHash = hash;
-        this.encryptionKey = new EncryptionKey(hash);
+        this.encryptionKey = new crypto_1.EncryptionKey(hash);
     }
     /**
      * Signs the document with the next available signature hash and the given data. The document
@@ -119,7 +157,7 @@ export class Document {
      * @throws BlockchainNotSupportedError
      */
     async verify() {
-        logTrace("verifying hash", bytesToHex(this.documentHash));
+        logTrace("verifying hash", (0, utils_1.bytesToHex)(this.documentHash));
         return _discoverSignatures(this.provider, this.documentHash, this.encryptionKey)
             .then(result => {
             this.hashIterator = result.hashes;
@@ -133,7 +171,7 @@ export class Document {
      * @returns string - the public id of the document as a 32-byte hex string
      */
     async getPublicIdentifier() {
-        return bytesToHex(await hash(this.documentHash));
+        return (0, utils_1.bytesToHex)(await (0, crypto_1.hash)(this.documentHash));
     }
     /**
      * Returns a hex string representation of the document hash.
@@ -142,9 +180,10 @@ export class Document {
      * @returns string - the 32-byte document hash as a hex string prefixed with '0x'
      */
     getDocumentHash() {
-        return bytesToHex(this.documentHash);
+        return (0, utils_1.bytesToHex)(this.documentHash);
     }
 }
+exports.Document = Document;
 //
 // Signing functions
 //
@@ -153,7 +192,7 @@ export class Document {
  * Returns an object containing the transaction hash, signatory, signature, and a Promise to resolve when confirmed.
  */
 async function _publishSignature(provider, signature, encryptionKey, data) {
-    const signatureHex = bytesToHex(signature);
+    const signatureHex = (0, utils_1.bytesToHex)(signature);
     return DataEncoder.encodeData(encryptionKey, data)
         .then(encodedData => {
         logTrace("publishing signature:", signature, "with data", encodedData);
@@ -180,7 +219,7 @@ async function _discoverSignatures(provider, documentHash, encryptionKey) {
     }
     async function _discoverNext(n) {
         const eSigs = await hashes.next(n);
-        const strEsigs = eSigs.map(s => { return bytesToHex(s); });
+        const strEsigs = eSigs.map(s => { return (0, utils_1.bytesToHex)(s); });
         // query the blockchain for the next batch of signatures and decode them
         logTrace("querying the blockchain for signatures: ", strEsigs);
         const events = await provider.querySignatures(strEsigs);
@@ -188,15 +227,15 @@ async function _discoverSignatures(provider, documentHash, encryptionKey) {
         const decodedEvents = await Promise.all(events.map(e => _decodeSignatureEvent(encryptionKey, e)));
         signatureEvents.push(...decodedEvents);
         // discover more signatures if necessary
-        if (events.length === MAX_SIGS_PER_DISCOVERY_ITERATION)
-            return _discoverNext(MAX_SIGS_PER_DISCOVERY_ITERATION);
+        if (events.length === constants_1.MAX_SIGS_PER_DISCOVERY_ITERATION)
+            return _discoverNext(constants_1.MAX_SIGS_PER_DISCOVERY_ITERATION);
         // Now all signatures have been discovered, sort them by most recent first and reset the
         // iterator to the last published signature.
         signatureEvents.sort((a, b) => b.time - a.time);
         hashes.reset(signatureEvents.length > 0 ? hashes.indexOf(signatureEvents[0].signature) : -1);
         return { hashes: hashes, signatures: signatureEvents };
     }
-    return _discoverNext(MAX_SIGS_PER_DISCOVERY_ITERATION);
+    return _discoverNext(constants_1.MAX_SIGS_PER_DISCOVERY_ITERATION);
 }
 /**
  * HashIterator class
@@ -205,7 +244,7 @@ async function _discoverSignatures(provider, documentHash, encryptionKey) {
  * from a document hash in accordance with OpenSig standard v0.1.  Use `next` to retrieve the next
  * `n` hashes.  The iterator will only generate hashes when the `next` function is called.
  */
-export class HashIterator {
+class HashIterator {
     constructor(documentHash, chainId) {
         this.hashes = [];
         this.hashPtr = -1;
@@ -214,11 +253,11 @@ export class HashIterator {
     }
     async next(n = 1) {
         if (!this.chainSpecificHash)
-            this.chainSpecificHash = await hash(concat([Uint8Array.from('' + this.chainId), this.documentHash]));
+            this.chainSpecificHash = await (0, crypto_1.hash)((0, utils_1.concat)([Uint8Array.from('' + this.chainId), this.documentHash]));
         if (this.hashes.length === 0)
-            this.hashes.push(await hash(this.chainSpecificHash));
+            this.hashes.push(await (0, crypto_1.hash)(this.chainSpecificHash));
         for (let i = this.hashes.length; i <= this.hashPtr + n; i++) {
-            this.hashes.push(await hash(concat([this.chainSpecificHash, this.hashes[i - 1]])));
+            this.hashes.push(await (0, crypto_1.hash)((0, utils_1.concat)([this.chainSpecificHash, this.hashes[i - 1]])));
         }
         return this.hashes.slice(this.hashPtr + 1, (this.hashPtr += n) + 1);
     }
@@ -226,9 +265,10 @@ export class HashIterator {
     currentIndex() { return this.hashPtr; }
     indexAt(i) { return i < this.hashes.length ? this.hashes[i] : undefined; }
     indexOf(hash) {
-        const hashHex = typeof hash === 'string' ? hash : bytesToHex(hash);
-        return this.hashes.findIndex(h => bytesToHex(h) === hashHex);
+        const hashHex = typeof hash === 'string' ? hash : (0, utils_1.bytesToHex)(hash);
+        return this.hashes.findIndex(h => (0, utils_1.bytesToHex)(h) === hashHex);
     }
     reset(n = 0) { this.hashPtr = n; }
     size() { return this.hashPtr + 1; }
 }
+exports.HashIterator = HashIterator;

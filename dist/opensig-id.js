@@ -1,7 +1,12 @@
+"use strict";
 // 
 // Copyright (c) OpenSig and contributors. All rights reserved.
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.toOpenSigId = toOpenSigId;
+exports.idToAddress = idToAddress;
+exports.convertOpenSigId = convertOpenSigId;
 /**
  * OpenSig ID utilities for converting between Ethereum addresses and OpenSig IDs.
  *
@@ -11,21 +16,21 @@
  *   - `did:os:[chain-id:]0x<address>`                 - raw id (hex address)
  *   - `did:pkh:eip155:[chain-id]:<address>`           - EIP-155 PKH id
  */
-import { base58, base64url } from '@scure/base';
-import { ethers } from 'ethers';
+const base_1 = require("@scure/base");
+const ethers_1 = require("ethers");
 /**
  * Constructs an OpenSig ID from an Ethereum address.
+ *
  * @param address the Ethereum address to convert
  * @param type the type of OpenSig ID to return = 'address' | 'default' | 'short' | 'raw' | 'pkh:eip155' | 'caip10'
  * @param chain the chain ID (default is 137 for Polygon)
- * @returns the OpenSig DID string
- * @throws Error if the address is invalid or the type is unknown
+ * @returns the OpenSig DID string or the empty string if the address is invalid
+ * @throws Error if the type is not supported
  */
-export function getOpenSigId(address, type = 'default', chain = 137) {
-    if (!_isAddress(address)) {
-        throw new Error("Invalid Ethereum address");
-    }
-    address = ethers.getAddress(address); // Normalize address to checksum format
+function toOpenSigId(address, type = 'default', chain = 137) {
+    if (!_isAddress(address))
+        return '';
+    address = ethers_1.ethers.getAddress(address.toLowerCase()); // Normalize address to checksum format
     const method = chain === 137 ? 'os' : `os:${chain}`;
     switch (type) {
         case 'address':
@@ -47,11 +52,11 @@ export function getOpenSigId(address, type = 'default', chain = 137) {
 /**
  * Converts an OpenSig ID - in any valid format - to an Ethereum address.
  * @param osId the OpenSig ID to convert
- * @returns the Ethereum address
+ * @returns the Ethereum address and chain id
  * @throws Error if the OpenSig ID format is invalid
  */
-export function idToAddress(osId) {
-    return convertOpenSigId(osId, 'address');
+function idToAddress(osId) {
+    return _resolveOpenSigId(osId, 'address');
 }
 /**
  * Converts one form of OpenSig ID to another.
@@ -60,7 +65,12 @@ export function idToAddress(osId) {
  * @returns the converted OpenSig ID
  * @throws Error if the OpenSig ID format is invalid
  */
-export function convertOpenSigId(osId, to) {
+function convertOpenSigId(osId, to) {
+    const { address, chain } = _resolveOpenSigId(osId, to);
+    return toOpenSigId(address, to, chain);
+}
+const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+function _resolveOpenSigId(osId, to) {
     let chain = 137;
     let address;
     if (_isAddress(osId)) {
@@ -98,22 +108,21 @@ export function convertOpenSigId(osId, to) {
     else {
         throw new Error("Unknown OpenSig ID format");
     }
-    return getOpenSigId(address, to, chain);
+    return { address, chain };
 }
-const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 function _isAddress(address) {
     return addressRegex.test(address);
 }
 function _encodeAddressToBase58(address) {
-    return base58.encode(Buffer.from(address.slice(2), 'hex'));
+    return base_1.base58.encode(Buffer.from(address.slice(2), 'hex'));
 }
 function _encodeAddressToBase64Url(address) {
-    return base64url.encode(Buffer.from(address.slice(2), 'hex'));
+    return base_1.base64url.encode(Buffer.from(address.slice(2), 'hex'));
 }
 function _decodeEncodedAddress(encoded) {
     if (addressRegex.test(encoded))
         return encoded;
-    const attempts = [base58, base64url];
+    const attempts = [base_1.base58, base_1.base64url];
     for (const encoder of attempts) {
         try {
             const bytes = encoder.decode(encoded);
