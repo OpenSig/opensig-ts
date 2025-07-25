@@ -36,7 +36,6 @@ class AbstractEVMProvider {
             console.warn("OpenSig: Invalid log format in received blockchain event", log);
             return null;
         }
-        console.debug("OpenSig: Decoded signature event", parsedLog);
         return {
             time: Number(parsedLog.args[0]),
             signatory: parsedLog.args[1],
