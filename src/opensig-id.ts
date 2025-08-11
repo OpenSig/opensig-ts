@@ -81,6 +81,9 @@ function _resolveOpenSigId(osId: string, to: OpenSigIdType): {address: string, c
   let chain = 137;
   let address: string;
 
+  if (!osId || typeof osId !== 'string') {
+    throw new Error("Missing or invalid id. Expecting an OpenSig DID string.");
+  }
   if (_isAddress(osId)) {
     address = osId;
   } 

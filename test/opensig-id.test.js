@@ -107,6 +107,19 @@ describe('OpenSig ID Utilities', () => {
         expect(result.chain).toBe(otherChain);
       }
     });
+
+    it('throws if id is missing', () => {
+      expect(() =>
+        idToAddress()
+      ).toThrow(/Missing or invalid id/);
+    });
+
+    it('throws if id is not a string', () => {
+      expect(() =>
+        idToAddress(123)
+      ).toThrow(/Missing or invalid id/);
+    });
+
   });
 
   describe('convertOpenSigId', () => {
@@ -135,5 +148,18 @@ describe('OpenSig ID Utilities', () => {
         convertOpenSigId('eip155:notanumber:wrong', 'default')
       ).toThrow(/Invalid eip155 format/);
     });
+
+    it('throws if id is missing', () => {
+      expect(() =>
+        convertOpenSigId()
+      ).toThrow(/Missing or invalid id/);
+    });
+
+    it('throws if id is not a string', () => {
+      expect(() =>
+        convertOpenSigId(123)
+      ).toThrow(/Missing or invalid id/);
+    });
+
   });
 });
