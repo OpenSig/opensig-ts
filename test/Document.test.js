@@ -2,15 +2,18 @@
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import { bytesToHex, hexToBytes } from '../src/utils';
 import { aesgcmEncrypt, encodeUTF16BE, sha256 } from './common';
+import { pack } from 'msgpackr';
 
 // ------ Test Configuration ------
 
 const OPENSIG_PROTOCOL_CONSTANTS = {
-  SIGNATURE_DATA_VERSION: "00",
+  SIGNATURE_DATA_VERSION: "01",
   SIGNATURE_DATA_UNENCRYPTED_STRING: "00",
   SIGNATURE_DATA_UNENCRYPTED_BINARY: "01",
+  SIGNATURE_DATA_UNENCRYPTED_OBJECT: "02",
   SIGNATURE_DATA_ENCRYPTED_STRING: "80",
   SIGNATURE_DATA_ENCRYPTED_BINARY: "81",
+  SIGNATURE_DATA_ENCRYPTED_OBJECT: "82",
 }
 
 
@@ -115,6 +118,14 @@ describe('OpenSig Document class', () => {
         );
       });
 
+      test('Event with object annotation is decoded correctly', async () => {
+        const obj = { foo: "bar", baz: 42 };
+        return testEventDecoding(
+          '0x0102' + bytesToHex(pack(obj)),
+          {type: 'object', content: obj, encrypted: false}
+        );
+      });
+
       test('Event with binary annotation is decoded correctly', async () => {
         const binaryData = new Uint8Array([0x01, 0x02, 0x03, 0x04]);
         return testEventDecoding(
@@ -168,15 +179,22 @@ describe('OpenSig Document class', () => {
 
         test('incorrect version', async () => {
           return testEventDecoding(
-            '0x0100' + bytesToHex(encodeUTF16BE("hello")).slice(2),
-            {type: 'invalid', content: 'unsupported data version: 01'}
+            '0x0200' + bytesToHex(encodeUTF16BE("hello")).slice(2),
+            {type: 'invalid', content: 'unsupported data version: 02'}
           );
         }); 
 
-        test('incorrect data type', async () => {
+        test('incorrect data type (v0)', async () => {
           return testEventDecoding(
             '0x0002' + bytesToHex(encodeUTF16BE("hello")).slice(2),
             {type: 'invalid', content: 'unsupported data type: 2 (version=00)'}
+          );
+        });
+
+        test('incorrect data type (v1)', async () => {
+          return testEventDecoding(
+            '0x0103' + bytesToHex(encodeUTF16BE("hello")).slice(2),
+            {type: 'invalid', content: 'unsupported data type: 3 (version=01)'}
           );
         });
 
@@ -212,6 +230,13 @@ describe('OpenSig Document class', () => {
           return testEventDecoding(
             '0x0080' + bytesToHex(encodeUTF16BE("hello")).slice(2),
             {type: 'invalid', content: 'failed to decrypt data'}
+          );
+        });
+
+        test('Invalid object json', async () => {
+          return testEventDecoding(
+            '0x0102' + bytesToHex(encodeUTF16BE("not a json object")).slice(2),
+            {type: 'invalid', content: 'failed to parse object data', encrypted: false, error: 'Data read, but end of buffer not reached 0'}
           );
         });
 
@@ -505,6 +530,21 @@ describe('OpenSig Document class', () => {
         expect(annotation).toEqual(expectedAnnotation);
       });
 
+      test('Unencrypted object annotation is published as plain MessagePacked object', async () => {
+        const doc = new opensig.Document(mockNetwork, sampleHash);
+        await doc.verify();
+        const obj = { t: 'a', m: 'message', foo: "bar", baz: [1, 2, 3] };
+        await doc.sign({ type: 'object', content: obj, encrypted: false });
+        expect(mockNetwork.publishSignature).toHaveBeenCalled();
+        const data = mockNetwork.publishSignature.mock.calls[0][1];
+        expect(data.slice(0, 2)).toEqual("0x");
+        expect(data.slice(2, 4)).toEqual(OPENSIG_PROTOCOL_CONSTANTS.SIGNATURE_DATA_VERSION);
+        expect(data.slice(4, 6)).toEqual(OPENSIG_PROTOCOL_CONSTANTS.SIGNATURE_DATA_UNENCRYPTED_OBJECT);
+        const annotation = data.slice(6);
+        const expectedAnnotation = bytesToHex(pack(obj));
+        expect(annotation).toEqual(expectedAnnotation);
+      });
+
       test('Encrypted annotation string is encrypted with the document hash', async () => {
         const doc = new opensig.Document(mockNetwork, sampleHash);
         await doc.verify();
@@ -535,6 +575,23 @@ describe('OpenSig Document class', () => {
         // Encrypted data field is concat(nonce, encrypted-data) where nonce is 12 random bytes
         const nonce = hexToBytes(annotation).slice(0,12);
         const encryptedData = await aesgcmEncrypt(sampleHash, nonce, binaryData);
+        expect(annotation).toEqual(bytesToHex(encryptedData, false));
+      });
+
+      test('Encrypted annotation object is encrypted with the document hash', async () => {
+        const doc = new opensig.Document(mockNetwork, sampleHash);
+        await doc.verify();
+        const obj = { t: 'a', m: 'message', foo: "bar", baz: [1, 2, 3] };
+        await doc.sign({ type: 'object', content: obj, encrypted: true });
+        expect(mockNetwork.publishSignature).toHaveBeenCalled();
+        const data = mockNetwork.publishSignature.mock.calls[0][1];
+        expect(data.slice(0, 2)).toEqual("0x");
+        expect(data.slice(2, 4)).toEqual(OPENSIG_PROTOCOL_CONSTANTS.SIGNATURE_DATA_VERSION);
+        expect(data.slice(4, 6)).toEqual(OPENSIG_PROTOCOL_CONSTANTS.SIGNATURE_DATA_ENCRYPTED_OBJECT);
+        const annotation = data.slice(6);
+        // Encrypted data field is concat(nonce, encrypted-data) where nonce is 12 random bytes
+        const nonce = hexToBytes(annotation).slice(0,12);
+        const encryptedData = await aesgcmEncrypt(sampleHash, nonce, pack(obj));
         expect(annotation).toEqual(bytesToHex(encryptedData, false));
       });
 

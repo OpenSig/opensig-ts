@@ -14,14 +14,14 @@ export function isHexString(str: string): boolean {
 }
 
 export function bytesToHex(arr: Uint8Array, prefix0x=true): string {
-  if (!(arr instanceof Uint8Array)) throw new TypeError('TypeError: bytesToHex - expected Uint8Array');
+  if (!(arr instanceof Uint8Array)) throw new TypeError(`TypeError: bytesToHex - expected Uint8Array got ${typeof arr}`);
   return (prefix0x ? '0x' : '') + 
     Array.from(arr).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 
 export function hexToBytes(hex: string): Uint8Array {
-  if (!isHexString(hex)) throw new TypeError('TypeError: hexToBytes - expected hex string');
+  if (!isHexString(hex)) throw new TypeError(`TypeError: hexToBytes - expected hex string got ${typeof hex}`);
   if (hex.length % 2 !== 0) throw new TypeError('TypeError: hexToBytes - hex string must have even length');
   const matches = hex.replace('0x','').match(/.{1,2}/g);
   if (!matches) return new Uint8Array();

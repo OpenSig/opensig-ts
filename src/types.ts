@@ -30,7 +30,7 @@ export interface SignatureEvent {
  * Data to be signed
  */
 export interface SignatureData {
-  type: 'none' | 'string' | 'binary' | 'invalid';
+  type: 'none' | 'string' | 'object' | 'binary' | 'invalid';
   content?: string;
   encrypted?: boolean;
   error?: string;

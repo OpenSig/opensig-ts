@@ -77,6 +77,39 @@ console.log('signature published successfully', receipt);
 
 ```
 
+## Signature Data
+
+Signatures are published with an optional annotation. Annotations can be strings, objects or binary. By default annotations are encrypted using the document hash (`H_d`) as the encryption key. This ensures only those with the original document can decrypt the annotation.
+
+Example annotations:
+
+```typescript
+
+const noData: SignatureData = { type: 'none' };
+
+const unencryptedStringData: SignatureData = {
+  type: 'string',
+  encrypted: false,
+  content: "Hello World!"
+}
+
+const encryptedBinaryData: SignatureData = {
+  type: 'binary',
+  encrypted: true,
+  content: "0x010203040506" // binary in hex form
+}
+
+const encryptedObjectData: SignatureData = {
+  type: 'object',
+  encrypted: true,
+  content: { foo: 'bar', baz: [1, 2, 3] }
+}
+```
+
+Note:
+- String data is unicode.
+- Object data is packed with the [MessagePack](https://msgpack.org/) protocol.
+
 ## Blockchain Providers
 
 OpenSig blockchain providers publish signature transactions to the blockchain and query the blockchain for signature events.

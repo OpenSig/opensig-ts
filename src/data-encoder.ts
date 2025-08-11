@@ -1,7 +1,8 @@
-import { SIG_DATA_ENCRYPTED_FLAG, SIG_DATA_TYPE_BYTES, SIG_DATA_TYPE_STRING, SIG_DATA_VERSION } from "./constants";
+import { SIG_DATA_ENCRYPTED_FLAG, SIG_DATA_TYPE_BYTES, SIG_DATA_TYPE_OBJECT, SIG_DATA_TYPE_STRING, SIG_DATA_VERSION } from "./constants";
 import { EncryptionKey } from "./crypto";
 import { SignatureData } from "./types";
 import { bytesToHex, hexToBytes, isHexString, unicodeHexToStr, unicodeStrToHex } from "./utils";
+import { unpack, pack } from 'msgpackr';
 
 
 //
@@ -20,6 +21,12 @@ export async function encodeData(encryptionKey: EncryptionKey, data?: SignatureD
       if (typeof data.content !== 'string' || data.content.length === 0) throw new Error("invalid data content");
       typeField += SIG_DATA_TYPE_STRING;
       encData = unicodeStrToHex(data.content);
+      break;
+
+    case 'object':
+      if (typeof data.content !== 'object') throw new Error("invalid data content");
+      typeField += SIG_DATA_TYPE_OBJECT;
+      encData = bytesToHex(pack(data.content));
       break;
 
     case 'binary':
@@ -49,16 +56,18 @@ export async function decodeData(encryptionKey: EncryptionKey, encData: string):
   if (encData.slice(0,2) !== '0x') return {type: "invalid", content: "corrupt hex data"};
   if (encData.length < 6) return {type: "invalid", content: "data is < 6 bytes"}
 
-  const version = encData.slice(2,4);
-  if (version !== SIG_DATA_VERSION) return {type: "invalid", content: "unsupported data version: "+version};
+  const versionStr = encData.slice(2,4);
+  const version = toIntVersion(versionStr);
+  if (!isValidVersion(version)) return {type: "invalid", content: "unsupported data version: "+versionStr};
   const typeField = parseInt(encData.slice(4,6), 16);
   const encrypted = typeField & SIG_DATA_ENCRYPTED_FLAG ? true : false;
   const type = typeField & ~SIG_DATA_ENCRYPTED_FLAG;
   const data: SignatureData = {
-    type: 'none',
+    type: 'invalid',
+    content: 'unsupported data type: ' + type + ' (version=' + versionStr + ')',
     encrypted: encrypted
   }
-  
+
   let sigData = encData.slice(6);
   if (encrypted && sigData.length > 0) {
     try {
@@ -75,16 +84,38 @@ export async function decodeData(encryptionKey: EncryptionKey, encData: string):
       data.type = 'string';
       data.content = unicodeHexToStr(sigData);
       break;
+
+    case SIG_DATA_TYPE_OBJECT:
+      if (version < 1) break;
+      data.type = 'object';
+      try {
+        data.content = unpack(hexToBytes(sigData));
+      }
+      catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return {type: "invalid", content: "failed to parse object data", encrypted: encrypted, error: msg};
+      }
+      break;
     
     case SIG_DATA_TYPE_BYTES:
       data.type = 'binary';
       data.content = '0x'+sigData
       break;
 
-    default:
-      data.type = 'invalid';
-      data.content = "unsupported data type: "+type+" (version="+version+")";
   }
 
   return data;
 }
+
+const SIG_DATA_VERSION_INT = toIntVersion(SIG_DATA_VERSION);
+
+function isValidVersion(version: number): boolean {
+  return version >= 0 && version <= SIG_DATA_VERSION_INT;
+}
+
+function toIntVersion(version: string): number {
+  const vInt = parseInt(version, 16);
+  if (isNaN(vInt)) return -1;
+  return vInt;
+}
+

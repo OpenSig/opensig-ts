@@ -29,10 +29,11 @@ export declare const REGISTRY_ABI: ({
     type: string;
     anonymous?: undefined;
 })[];
-export declare const SIG_DATA_VERSION = "00";
+export declare const SIG_DATA_VERSION = "01";
 export declare const SIG_DATA_ENCRYPTED_FLAG = 128;
 export declare const SIG_DATA_TYPE_STRING = 0;
 export declare const SIG_DATA_TYPE_BYTES = 1;
+export declare const SIG_DATA_TYPE_OBJECT = 2;
 /**
  * Maximum number of signatures to search for in each verification query
  */

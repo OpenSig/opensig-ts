@@ -1,6 +1,6 @@
 {
   "name": "opensig-ts",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "OpenSig typescript library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,7 +34,8 @@
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
     "ethers": "^6.14.1",
-    "hash-wasm": "^4.12.0"
+    "hash-wasm": "^4.12.0",
+    "msgpackr": "^1.11.5"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

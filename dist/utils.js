@@ -20,13 +20,13 @@ function isHexString(str) {
 }
 function bytesToHex(arr, prefix0x = true) {
     if (!(arr instanceof Uint8Array))
-        throw new TypeError('TypeError: bytesToHex - expected Uint8Array');
+        throw new TypeError(`TypeError: bytesToHex - expected Uint8Array got ${typeof arr}`);
     return (prefix0x ? '0x' : '') +
         Array.from(arr).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 function hexToBytes(hex) {
     if (!isHexString(hex))
-        throw new TypeError('TypeError: hexToBytes - expected hex string');
+        throw new TypeError(`TypeError: hexToBytes - expected hex string got ${typeof hex}`);
     if (hex.length % 2 !== 0)
         throw new TypeError('TypeError: hexToBytes - hex string must have even length');
     const matches = hex.replace('0x', '').match(/.{1,2}/g);

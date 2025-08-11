@@ -73,6 +73,9 @@ const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 function _resolveOpenSigId(osId, to) {
     let chain = 137;
     let address;
+    if (!osId || typeof osId !== 'string') {
+        throw new Error("Missing or invalid id. Expecting an OpenSig DID string.");
+    }
     if (_isAddress(osId)) {
         address = osId;
     }
