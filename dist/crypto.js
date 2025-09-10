@@ -12,7 +12,6 @@ const ethers_1 = require("ethers");
 const aes_1 = require("@noble/ciphers/aes");
 const utils_1 = require("./utils");
 const errors_1 = require("./errors");
-const sha2_1 = require("@noble/hashes/sha2");
 /**
  * Reads a file in chunks as Uint8Arrays
  */
@@ -41,7 +40,10 @@ async function hashFile(file) {
  */
 async function hash(data) {
     (0, errors_1.assertUint8Array)(data, "hash");
-    return (0, sha2_1.sha256)(data);
+    const hasher = await (0, hash_wasm_1.createSHA256)();
+    hasher.init();
+    hasher.update(data);
+    return (0, utils_1.hexToBytes)(hasher.digest('hex'));
 }
 /**
  * AES-GCM based encryption using a key derived from a 32-byte seed
@@ -61,7 +63,7 @@ class EncryptionKey {
         (0, errors_1.assertUint8Array)(data, "encrypt");
         const iv = (0, ethers_1.randomBytes)(12); // 96-bit IV
         const aes = (0, aes_1.gcm)(this.key, iv);
-        const ciphertext = await aes.encrypt(data);
+        const ciphertext = aes.encrypt(data);
         return new Uint8Array([...iv, ...ciphertext]);
     }
     /**
@@ -72,7 +74,7 @@ class EncryptionKey {
         const iv = data.slice(0, 12);
         const ciphertext = data.slice(12);
         const cipher = (0, aes_1.gcm)(this.key, iv);
-        const plaintext = await cipher.decrypt(ciphertext);
+        const plaintext = cipher.decrypt(ciphertext);
         return plaintext;
     }
 }
