@@ -8,8 +8,10 @@ import { randomBytes } from 'ethers';
 import { gcm } from '@noble/ciphers/aes';
 import { hexToBytes } from './utils';
 import { assertUint8Array } from './errors';
+import { sha256 } from '@noble/hashes/sha2';
 
   
+
 /**
  * Reads a file in chunks as Uint8Arrays
  */
@@ -40,10 +42,7 @@ export async function hashFile(file: Blob): Promise<Uint8Array> {
  */
 export async function hash(data: Uint8Array): Promise<Uint8Array> {
   assertUint8Array(data, "hash");
-  const hasher = await createSHA256();
-  hasher.init();
-  hasher.update(data);
-  return hexToBytes(hasher.digest('hex'));
+  return sha256(data);
 }
 
 /**
@@ -64,7 +63,7 @@ export class EncryptionKey {
     assertUint8Array(data, "encrypt");
     const iv = randomBytes(12); // 96-bit IV
     const aes = gcm(this.key, iv);
-    const ciphertext = aes.encrypt(data);
+    const ciphertext = await aes.encrypt(data);
     return new Uint8Array([...iv, ...ciphertext]);
   }
 
@@ -76,7 +75,7 @@ export class EncryptionKey {
     const iv = data.slice(0, 12);
     const ciphertext = data.slice(12);
     const cipher = gcm(this.key, iv);
-    const plaintext = cipher.decrypt(ciphertext);
+    const plaintext = await cipher.decrypt(ciphertext);
     return plaintext;
   }
 }
