@@ -3,12 +3,10 @@
 // SPDX-License-Identifier: MIT. See LICENSE file in the project root for details.
 //
 
-import { createSHA256 } from 'hash-wasm';
 import { randomBytes } from 'ethers';
 import { gcm } from '@noble/ciphers/aes';
-import { hexToBytes } from './utils';
 import { assertUint8Array } from './errors';
-import { sha256 } from '@noble/hashes/sha2';
+import { sha256 } from '@noble/hashes/sha2.js';
 
   
 
@@ -29,12 +27,11 @@ async function* readFileChunks(blob: Blob, chunkSize = 1024 * 1024): AsyncGenera
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
 export async function hashFile(file: Blob): Promise<Uint8Array> {
-  const hasher = await createSHA256();
-  hasher.init();
+  const hasher = sha256.create();
   for await (const chunk of readFileChunks(file)) {
     hasher.update(chunk);
   }
-  return hexToBytes(hasher.digest('hex'));
+  return hasher.digest();
 }
 
 /**

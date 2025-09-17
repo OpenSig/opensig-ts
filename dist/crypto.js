@@ -7,12 +7,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncryptionKey = void 0;
 exports.hashFile = hashFile;
 exports.hash = hash;
-const hash_wasm_1 = require("hash-wasm");
 const ethers_1 = require("ethers");
 const aes_1 = require("@noble/ciphers/aes");
-const utils_1 = require("./utils");
 const errors_1 = require("./errors");
-const sha2_1 = require("@noble/hashes/sha2");
+const sha2_js_1 = require("@noble/hashes/sha2.js");
 /**
  * Reads a file in chunks as Uint8Arrays
  */
@@ -29,19 +27,18 @@ async function* readFileChunks(blob, chunkSize = 1024 * 1024) {
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
 async function hashFile(file) {
-    const hasher = await (0, hash_wasm_1.createSHA256)();
-    hasher.init();
+    const hasher = sha2_js_1.sha256.create();
     for await (const chunk of readFileChunks(file)) {
         hasher.update(chunk);
     }
-    return (0, utils_1.hexToBytes)(hasher.digest('hex'));
+    return hasher.digest();
 }
 /**
  * Hashes data using SHA-256 via hash-wasm
  */
 async function hash(data) {
     (0, errors_1.assertUint8Array)(data, "hash");
-    return (0, sha2_1.sha256)(data);
+    return (0, sha2_js_1.sha256)(data);
 }
 /**
  * AES-GCM based encryption using a key derived from a 32-byte seed

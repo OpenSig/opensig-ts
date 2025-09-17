@@ -6,6 +6,9 @@
 import type {Config} from 'jest';
 
 const config: Config = {
+  transformIgnorePatterns: [
+    "/node_modules/(?!@noble/ciphers|@noble/hashes)/"
+  ],
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
