@@ -11,7 +11,7 @@ export declare function setLogTrace(traceOn: boolean): void;
 export declare class OpenSig {
     provider: IBlockchainProvider;
     constructor(provider: IBlockchainProvider);
-    createDocument(fileOrHash: Blob | Uint8Array | string): Promise<Document>;
+    createDocument(fileOrHash: Blob | Uint8Array | string, progressCallback?: (progress: number) => void): Promise<Document>;
 }
 /**
  * Document class

@@ -14,21 +14,24 @@ const sha2_js_1 = require("@noble/hashes/sha2.js");
 /**
  * Reads a file in chunks as Uint8Arrays
  */
-async function* readFileChunks(blob, chunkSize = 1024 * 1024) {
+async function* readFileChunks(blob, chunkSize = 1024 * 1024, progressCallback) {
     let offset = 0;
     while (offset < blob.size) {
         const slice = blob.slice(offset, offset + chunkSize);
         const buffer = await slice.arrayBuffer();
         yield new Uint8Array(buffer);
         offset += chunkSize;
+        if (progressCallback) {
+            progressCallback(Math.min(offset, blob.size) / blob.size);
+        }
     }
 }
 /**
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
-async function hashFile(file) {
+async function hashFile(file, progressCallback) {
     const hasher = sha2_js_1.sha256.create();
-    for await (const chunk of readFileChunks(file)) {
+    for await (const chunk of readFileChunks(file, 1024 * 1024, progressCallback)) {
         hasher.update(chunk);
     }
     return hasher.digest();

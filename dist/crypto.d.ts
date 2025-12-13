@@ -1,7 +1,7 @@
 /**
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
-export declare function hashFile(file: Blob): Promise<Uint8Array>;
+export declare function hashFile(file: Blob, progressCallback?: (progress: number) => void): Promise<Uint8Array>;
 /**
  * Hashes data using SHA-256 via hash-wasm
  */

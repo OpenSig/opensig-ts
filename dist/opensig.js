@@ -71,13 +71,13 @@ class OpenSig {
         this.provider = provider;
         (0, IBlockchainProvider_1.assertIBlockchainProvider)(provider);
     }
-    async createDocument(fileOrHash) {
+    async createDocument(fileOrHash, progressCallback) {
         let hash = new Uint8Array();
         if (fileOrHash instanceof Uint8Array) {
             hash = fileOrHash;
         }
         else if ((0, utils_1.isBlob)(fileOrHash)) {
-            hash = await (0, crypto_1.hashFile)(fileOrHash);
+            hash = await (0, crypto_1.hashFile)(fileOrHash, progressCallback);
         }
         else if ((0, utils_1.isHexString)(fileOrHash)) {
             hash = (0, utils_1.hexToBytes)(fileOrHash);
