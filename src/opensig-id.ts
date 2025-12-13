@@ -131,11 +131,11 @@ function _isAddress(address: string): boolean {
 }
 
 function _encodeAddressToBase58(address: string): string {
-  return base58.encode(Buffer.from(address.slice(2), 'hex'));
+  return base58.encode(ethers.getBytes(address));
 }
 
 function _encodeAddressToBase64Url(address: string): string {
-  return base64url.encode(Buffer.from(address.slice(2), 'hex'));
+  return base64url.encode(ethers.getBytes(address));
 }
 
 function _decodeEncodedAddress(encoded: string): string {
@@ -145,7 +145,7 @@ function _decodeEncodedAddress(encoded: string): string {
     try {
       const bytes = encoder.decode(encoded);
       if (bytes.length === 20) {
-        return `0x${Buffer.from(bytes).toString('hex')}`;
+        return ethers.hexlify(bytes); // Convert bytes to hex address
       }
     } catch (_) {
       // try next
