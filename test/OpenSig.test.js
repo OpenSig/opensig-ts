@@ -87,6 +87,20 @@ describe('OpenSig class', () => {
       expect(bytesToHex(document.documentHash)).toBe(OPENSIG_SAMPLE_SIGNATURE.documentHash);
     });
 
+    test('createDocument progress callback works', async () => {
+      const fileBuffer = fs.readFileSync('./test/test-files/large-file.bin');
+      const file = new Blob([fileBuffer]);
+      let lastProgress = 0;
+      const progressCallback = (progress) => {
+        expect(progress).toBeGreaterThanOrEqual(lastProgress);
+        expect(progress).toBeLessThanOrEqual(1);
+        lastProgress = progress;
+      };
+      const document = await opensig.createDocument(file, progressCallback);
+      expect(document).toBeInstanceOf(Document);
+      expect(lastProgress).toBe(1);
+    });
+
   });
 
 });

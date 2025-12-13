@@ -42,13 +42,13 @@ export class OpenSig {
     assertIBlockchainProvider(provider);
   }
 
-  async createDocument(fileOrHash: Blob | Uint8Array | string): Promise<Document> {
+  async createDocument(fileOrHash: Blob | Uint8Array | string, progressCallback?: (progress: number) => void): Promise<Document> {
     let hash: Uint8Array = new Uint8Array();
     if (fileOrHash instanceof Uint8Array) {
       hash = fileOrHash;
     }
     else if (isBlob(fileOrHash)) {
-      hash = await hashFile(fileOrHash);
+      hash = await hashFile(fileOrHash, progressCallback);
     }
     else if (isHexString(fileOrHash)) {
       hash = hexToBytes(fileOrHash);

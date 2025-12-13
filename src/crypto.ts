@@ -13,22 +13,25 @@ import { sha256 } from '@noble/hashes/sha2.js';
 /**
  * Reads a file in chunks as Uint8Arrays
  */
-async function* readFileChunks(blob: Blob, chunkSize = 1024 * 1024): AsyncGenerator<Uint8Array> {
+async function* readFileChunks(blob: Blob, chunkSize = 1024 * 1024, progressCallback?: (progress: number) => void): AsyncGenerator<Uint8Array> {
   let offset = 0;
   while (offset < blob.size) {
     const slice = blob.slice(offset, offset + chunkSize);
     const buffer = await slice.arrayBuffer();
     yield new Uint8Array(buffer);
     offset += chunkSize;
+    if (progressCallback) {
+      progressCallback(Math.min(offset, blob.size) / blob.size);
+    }
   }
 }
 
 /**
  * Hashes a File using streaming SHA-256 via hash-wasm
  */
-export async function hashFile(file: Blob): Promise<Uint8Array> {
+export async function hashFile(file: Blob, progressCallback?: (progress: number) => void): Promise<Uint8Array> {
   const hasher = sha256.create();
-  for await (const chunk of readFileChunks(file)) {
+  for await (const chunk of readFileChunks(file, 1024 * 1024, progressCallback)) {
     hasher.update(chunk);
   }
   return hasher.digest();
