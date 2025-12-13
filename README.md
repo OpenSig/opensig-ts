@@ -1,6 +1,6 @@
 # opensig-ts
 
-Javascript e-signature library for digitally signing and verifying files on EVM-based blockchains using the [OpenSig standard](https://github.com/opensig/opensig-protocol).  See also https://opensig.net/about.  
+Reference typescript e-signature library for digitally signing and verifying files on EVM-based blockchains using the [OpenSig standard](https://github.com/opensig/opensig-protocol).  See also https://opensig.net/webapp/about.  
 
 Also supports public and private message notarisation to the blockchain.
 
