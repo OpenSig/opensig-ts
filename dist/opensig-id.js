@@ -117,10 +117,10 @@ function _isAddress(address) {
     return addressRegex.test(address);
 }
 function _encodeAddressToBase58(address) {
-    return base_1.base58.encode(Buffer.from(address.slice(2), 'hex'));
+    return base_1.base58.encode(ethers_1.ethers.getBytes(address));
 }
 function _encodeAddressToBase64Url(address) {
-    return base_1.base64url.encode(Buffer.from(address.slice(2), 'hex'));
+    return base_1.base64url.encode(ethers_1.ethers.getBytes(address));
 }
 function _decodeEncodedAddress(encoded) {
     if (addressRegex.test(encoded))
@@ -130,7 +130,7 @@ function _decodeEncodedAddress(encoded) {
         try {
             const bytes = encoder.decode(encoded);
             if (bytes.length === 20) {
-                return `0x${Buffer.from(bytes).toString('hex')}`;
+                return ethers_1.ethers.hexlify(bytes); // Convert bytes to hex address
             }
         }
         catch (_) {
